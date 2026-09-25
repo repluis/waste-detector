@@ -21,6 +21,7 @@ Abre la app, entra en **Escáner** → **Iniciar detección** y concede permiso 
 
 - [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md): stack, flujo de datos, carpetas, decisiones y roadmap
 - [docs/RUTAS.md](docs/RUTAS.md): rutas de la app y cómo añadir nuevas
+- [docs/ERRORES.md](docs/ERRORES.md): códigos de error, logs y comandos de depuración (`wasteVision.help()` en la consola)
 
 ## Modelo
 

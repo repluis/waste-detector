@@ -1,3 +1,5 @@
+import { AppError, ErrorCode } from '@/core/errors'
+
 /** Cómo se escaló/rellenó el frame para caber en el tensor cuadrado. */
 export interface LetterboxInfo {
   scale: number
@@ -22,7 +24,13 @@ export class Preprocessor {
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) throw new Error('Canvas 2D no disponible')
+    if (!ctx) {
+      throw new AppError({
+        code: ErrorCode.CANVAS_UNAVAILABLE,
+        message: 'No se pudo crear el canvas de preprocesado',
+        context: { size },
+      })
+    }
     this.ctx = ctx
     this.buffer = new Float32Array(3 * size * size)
   }

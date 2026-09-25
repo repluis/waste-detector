@@ -1,6 +1,10 @@
 import { storeToRefs } from 'pinia'
+import { ErrorCode, toAppError } from '@/core/errors'
+import { createLogger } from '@/core/logger'
 import { createDetector, type Detector } from '@/services/detector'
 import { useDetectionStore } from '@/stores/detection.store'
+
+const log = createLogger('detector')
 
 // Singleton: el modelo se descarga y compila una sola vez por sesión.
 let detector: Detector | null = null
@@ -17,19 +21,23 @@ export function useDetector() {
     modelStatus.value = 'loading'
     modelError.value = null
     const instance = createDetector()
+    const done = log.time('Carga total del detector')
 
     loading = instance
       .load()
       .then((b) => {
+        done()
         backend.value = b
         modelStatus.value = 'ready'
         detector = instance
         return instance
       })
       .catch((err) => {
+        const appError = toAppError(err, ErrorCode.MODEL_LOAD_FAILED)
         modelStatus.value = 'error'
-        modelError.value = err instanceof Error ? err.message : String(err)
-        throw err
+        modelError.value = appError
+        log.error('No se pudo cargar el modelo', appError)
+        throw appError
       })
       .finally(() => {
         loading = null

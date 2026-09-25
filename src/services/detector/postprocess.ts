@@ -1,3 +1,4 @@
+import { ErrorCode, ModelError } from '@/core/errors'
 import type { BoundingBox } from '@/types/detection'
 import { nms, type ScoredBox } from './nms'
 import type { LetterboxInfo } from './preprocess'
@@ -16,13 +17,26 @@ export interface DecodeOptions {
  *  - end2end  [1, N, 6]      → x1, y1, x2, y2, score, classId (YOLOv10 / YOLO26, NMS integrado)
  *  - raw      [1, 4+nc, N]   → cx, cy, w, h, score_c0..score_cn (YOLOv8 / YOLO11, requiere NMS)
  */
+export type YoloOutputFormat = 'end2end' | 'raw'
+
+export function detectOutputFormat(dims: readonly number[]): YoloOutputFormat {
+  if (dims.length === 3 && dims[2] === 6) return 'end2end'
+  if (dims.length === 3 && dims[1]! > 4) return 'raw'
+  throw new ModelError({
+    code: ErrorCode.MODEL_OUTPUT_UNSUPPORTED,
+    message: `Salida de modelo inesperada: [${dims.join(', ')}]`,
+    context: { dims: [...dims], esperado: '[1, N, 6] o [1, 4+nc, N]' },
+  })
+}
+
 export function decodeYoloOutput(
   output: Float32Array,
   dims: readonly number[],
   opts: DecodeOptions,
 ): ScoredBox[] {
-  if (dims.length !== 3) throw new Error(`Salida de modelo inesperada: [${dims.join(', ')}]`)
-  return dims[2] === 6 ? decodeEnd2End(output, dims[1]!, opts) : decodeRaw(output, dims[1]!, dims[2]!, opts)
+  return detectOutputFormat(dims) === 'end2end'
+    ? decodeEnd2End(output, dims[1]!, opts)
+    : decodeRaw(output, dims[1]!, dims[2]!, opts)
 }
 
 function decodeEnd2End(out: Float32Array, count: number, opts: DecodeOptions): ScoredBox[] {

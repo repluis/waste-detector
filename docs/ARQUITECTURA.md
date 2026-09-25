@@ -52,6 +52,11 @@ waste-vision/
 │   ├── App.vue                    ← layout (header + <RouterView>)
 │   ├── env.d.ts                   ← tipos de variables VITE_*
 │   │
+│   ├── core/                      ← infraestructura transversal (ver ERRORES.md)
+│   │   ├── errors/                ← AppError + CameraError/ModelError/InferenceError, códigos, handlers globales
+│   │   ├── logger/                ← logger con niveles, ámbitos, cronómetros e historial
+│   │   └── diagnostics/           ← auditoría del entorno + comandos `wasteVision.*` en consola
+│   │
 │   ├── config/                    ← TODO lo configurable, sin lógica
 │   │   ├── model.config.ts        ← URL del modelo, tamaño de entrada, umbrales, clases
 │   │   ├── waste-categories.ts    ← categorías, colores, contenedor y mapeo etiqueta→residuo
@@ -100,6 +105,7 @@ waste-vision/
 3. **`composables/`** son la única capa que conecta services ↔ estado reactivo.
 4. **`components/`** no llaman a services directamente; reciben props y emiten eventos.
 5. **`views/`** orquestan composables y componentes.
+6. **Errores**: los services **lanzan** excepciones tipadas con código y contexto; los composables las **registran** una vez y las exponen a la UI. Detalle en [ERRORES.md](ERRORES.md).
 
 ## Decisiones clave
 
@@ -121,6 +127,7 @@ waste-vision/
 - [x] Detección en tiempo real con cajas en canvas y resultado principal
 - [x] Filtro "solo residuos"
 - [x] Configuración de despliegue en Vercel (`vercel.json`)
+- [x] Excepciones tipadas con códigos, logs de auditoría y comandos de depuración en consola
 - [x] **Modelo provisional**: YOLOv10n preentrenado en COCO. Reconoce botellas, vasos, cubiertos, libros y comida, y los mapea a plástico, vidrio, metal, papel y orgánico.
 
 > ⚠️ El modelo COCO es solo para validar el pipeline. **No** distingue materiales (una botella siempre será "plástico", aunque sea de vidrio). La precisión real llega en la Fase 1.

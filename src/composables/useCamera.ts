@@ -1,11 +1,15 @@
-import { onBeforeUnmount, readonly, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { ErrorCode, toAppError, type AppError } from '@/core/errors'
+import { createLogger } from '@/core/logger'
 import { closeCamera, openCamera, type FacingMode } from '@/services/camera/camera.service'
+
+const log = createLogger('camera')
 
 export function useCamera(initialFacing: FacingMode = 'environment') {
   const stream = shallowRef<MediaStream | null>(null)
   const facingMode = ref<FacingMode>(initialFacing)
   const isStarting = ref(false)
-  const error = ref<string | null>(null)
+  const error = shallowRef<AppError | null>(null)
 
   async function start() {
     stop()
@@ -14,7 +18,8 @@ export function useCamera(initialFacing: FacingMode = 'environment') {
     try {
       stream.value = await openCamera({ facingMode: facingMode.value })
     } catch (err) {
-      error.value = err instanceof Error ? err.message : String(err)
+      error.value = toAppError(err, ErrorCode.CAMERA_UNKNOWN)
+      log.error('No se pudo abrir la cámara', error.value)
     } finally {
       isStarting.value = false
     }
@@ -27,6 +32,7 @@ export function useCamera(initialFacing: FacingMode = 'environment') {
 
   async function toggleFacing() {
     facingMode.value = facingMode.value === 'environment' ? 'user' : 'environment'
+    log.debug(`Cambiando a cámara ${facingMode.value === 'user' ? 'frontal' : 'trasera'}`)
     if (stream.value) await start()
   }
 
@@ -34,9 +40,9 @@ export function useCamera(initialFacing: FacingMode = 'environment') {
 
   return {
     stream,
-    facingMode: readonly(facingMode),
-    isStarting: readonly(isStarting),
-    error: readonly(error),
+    facingMode: computed(() => facingMode.value),
+    isStarting: computed(() => isStarting.value),
+    error: computed(() => error.value),
     start,
     stop,
     toggleFacing,

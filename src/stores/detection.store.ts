@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
+import type { AppError } from '@/core/errors'
 import type { ExecutionBackend, ModelStatus, WasteDetection } from '@/types/detection'
 
 export const useDetectionStore = defineStore('detection', () => {
   const modelStatus = ref<ModelStatus>('idle')
-  const modelError = ref<string | null>(null)
+  const modelError = shallowRef<AppError | null>(null)
+  /** Error que detuvo el bucle de detección (fallos repetidos de inferencia). */
+  const runtimeError = shallowRef<AppError | null>(null)
   const backend = ref<ExecutionBackend | null>(null)
 
   const detections = shallowRef<WasteDetection[]>([])
@@ -35,5 +38,16 @@ export const useDetectionStore = defineStore('detection', () => {
     lastFrameAt = 0
   }
 
-  return { modelStatus, modelError, backend, detections, inferenceMs, fps, primaryDetection, pushFrame, resetFrame }
+  return {
+    modelStatus,
+    modelError,
+    runtimeError,
+    backend,
+    detections,
+    inferenceMs,
+    fps,
+    primaryDetection,
+    pushFrame,
+    resetFrame,
+  }
 })

@@ -17,9 +17,9 @@ const frameSize = reactive({ width: 0, height: 0 })
 const camera = useCamera()
 const detector = useDetector()
 const loop = useDetectionLoop(video)
-const { detections, primaryDetection, fps, inferenceMs } = storeToRefs(useDetectionStore())
+const { detections, primaryDetection, fps, inferenceMs, runtimeError } = storeToRefs(useDetectionStore())
 
-const error = computed(() => camera.error.value ?? detector.modelError.value)
+const error = computed(() => camera.error.value ?? detector.modelError.value ?? runtimeError.value)
 const isActive = computed(() => !!camera.stream.value)
 
 async function startScanning() {
@@ -62,7 +62,10 @@ function onVideoReady(el: HTMLVideoElement) {
       La cámara está apagada
     </div>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <div v-if="error" class="error" role="alert">
+      <p>{{ error.userMessage }}</p>
+      <small>Código: <code>{{ error.code }}</code> · detalles en la consola del navegador (F12)</small>
+    </div>
 
     <WasteResult v-if="isActive" :detection="primaryDetection" />
 
@@ -105,6 +108,15 @@ function onVideoReady(el: HTMLVideoElement) {
   border-radius: var(--radius);
   background: rgb(239 68 68 / 0.12);
   color: #fca5a5;
+}
+
+.error p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.error small {
+  opacity: 0.8;
 }
 
 .actions {

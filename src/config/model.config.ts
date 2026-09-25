@@ -21,7 +21,9 @@ export interface ModelConfig {
  */
 export const MODEL_CONFIG: ModelConfig = {
   url: import.meta.env.VITE_MODEL_URL ?? `${import.meta.env.BASE_URL}models/waste-detector.onnx`,
-  wasmPath: `${import.meta.env.BASE_URL}ort/`,
+  // URL absoluta a propósito: con una ruta relativa, Vite (dev) añade "?import" al import dinámico
+  // de onnxruntime y se niega a servir el archivo desde /public.
+  wasmPath: new URL(`${import.meta.env.BASE_URL}ort/`, location.origin).href,
   inputSize: 640,
   labels: COCO_LABELS,
   scoreThreshold: Number(import.meta.env.VITE_SCORE_THRESHOLD ?? 0.4),

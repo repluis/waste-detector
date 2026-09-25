@@ -18,7 +18,8 @@ Clasificación de residuos **en tiempo real y 100 % en el navegador**. El video 
 ## Flujo de datos
 
 ```
-getUserMedia ─► <video> ─► Preprocessor (letterbox 640×640, NCHW float32)
+getUserMedia ─► <video> ─► Preprocessor (letterbox 640×640 → filtros opcionales → /255 → NCHW float32)
+                                 │                        └─► canvas de preprocesado ─► vista "Lo que ve el modelo"
                                  │
                                  ▼
                     ONNX Runtime Web (WebGPU / WASM)
@@ -73,6 +74,7 @@ waste-vision/
 │   │   │   ├── preprocess.ts      ← letterbox + normalización
 │   │   │   ├── postprocess.ts     ← decodificación de la salida YOLO
 │   │   │   └── nms.ts             ← Non-Maximum Suppression
+│   │   ├── image/filters.ts       ← filtros de preprocesado (niveles, gamma, contraste, enfoque…)
 │   │   └── waste/waste-classifier.ts ← RawDetection → WasteDetection (filtro "solo residuos")
 │   │
 │   ├── composables/               ← puente entre services y componentes (reactividad + ciclo de vida)
@@ -128,6 +130,19 @@ waste-vision/
 - [x] Filtro "solo residuos"
 - [x] Configuración de despliegue en Vercel (`vercel.json`)
 - [x] Excepciones tipadas con códigos, logs de auditoría y comandos de depuración en consola
+- [x] Filtros de preprocesado configurables (9 filtros + 6 ajustes predefinidos), vista "Lo que ve el modelo" y panel que explica cada paso del pipeline
+
+### Preprocesado de imagen
+
+Pasos que se aplican **siempre** a cada frame, en este orden (`services/detector/preprocess.ts`):
+
+1. **Captura**: frame del `<video>` a su resolución real (p. ej. 1280×720).
+2. **Letterbox**: escala a 640×360 manteniendo la proporción y rellena con gris 114 hasta 640×640.
+3. **Filtros opcionales**: solo sobre la zona del frame, no sobre el relleno. Siempre en el orden canónico: ruido → exposición → color → nitidez → grises.
+4. **Normalización**: ÷ 255 (0–1), sin restar media.
+5. **Reordenado HWC → CHW**: tensor `float32 [1, 3, 640, 640]`.
+
+Los filtros se configuran en la UI y se guardan en `localStorage`. Para añadir uno, se agrega una entrada a `FILTERS` en `services/image/filters.ts`, y aparece solo en el panel.
 - [x] **Modelo provisional**: YOLOv10n preentrenado en COCO. Reconoce botellas, vasos, cubiertos, libros y comida, y los mapea a plástico, vidrio, metal, papel y orgánico.
 
 > ⚠️ El modelo COCO es solo para validar el pipeline. **No** distingue materiales (una botella siempre será "plástico", aunque sea de vidrio). La precisión real llega en la Fase 1.

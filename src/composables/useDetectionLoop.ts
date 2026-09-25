@@ -1,9 +1,10 @@
-import { onBeforeUnmount, ref, type Ref } from 'vue'
+import { onBeforeUnmount, ref, toRaw, type Ref } from 'vue'
 import { ErrorCode, InferenceError, toAppError } from '@/core/errors'
 import { createLogger } from '@/core/logger'
 import type { Detector } from '@/services/detector'
 import { toWasteDetections } from '@/services/waste/waste-classifier'
 import { useDetectionStore } from '@/stores/detection.store'
+import { useImageSettingsStore } from '@/stores/image-settings.store'
 
 const log = createLogger('loop')
 
@@ -17,6 +18,7 @@ const PERF_LOG_INTERVAL_MS = 5000
  */
 export function useDetectionLoop(video: Ref<HTMLVideoElement | null>) {
   const store = useDetectionStore()
+  const imageSettings = useImageSettingsStore()
   const isRunning = ref(false)
   let frameId = 0
   let detector: Detector | null = null
@@ -28,8 +30,10 @@ export function useDetectionLoop(video: Ref<HTMLVideoElement | null>) {
     const el = video.value
     if (el && el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && el.videoWidth > 0) {
       try {
-        const { detections, inferenceMs } = await detector.detect(el, el.videoWidth, el.videoHeight)
-        if (isRunning.value) store.pushFrame(toWasteDetections(detections), inferenceMs)
+        const { detections, inferenceMs, input } = await detector.detect(el, el.videoWidth, el.videoHeight, {
+          filters: toRaw(imageSettings.filters), // sin proxy reactivo en el bucle caliente
+        })
+        if (isRunning.value) store.pushFrame(toWasteDetections(detections), inferenceMs, input)
         failures = 0
       } catch (err) {
         if (handleFailure(err)) return

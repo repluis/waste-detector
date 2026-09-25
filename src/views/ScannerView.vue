@@ -3,28 +3,41 @@ import { storeToRefs } from 'pinia'
 import { CircleStop, Play, SwitchCamera } from 'lucide-vue-next'
 import { computed, reactive, shallowRef } from 'vue'
 import CameraView from '@/components/camera/CameraView.vue'
+import FilteredPreview from '@/components/camera/FilteredPreview.vue'
 import DetectionCanvas from '@/components/detection/DetectionCanvas.vue'
 import DetectorStatus from '@/components/detection/DetectorStatus.vue'
 import WasteResult from '@/components/detection/WasteResult.vue'
+import FilterPanel from '@/components/filters/FilterPanel.vue'
+import PipelineInfo from '@/components/filters/PipelineInfo.vue'
+import ViewModeToggle from '@/components/filters/ViewModeToggle.vue'
 import { useCamera } from '@/composables/useCamera'
 import { useDetectionLoop } from '@/composables/useDetectionLoop'
 import { useDetector } from '@/composables/useDetector'
+import type { Detector } from '@/services/detector'
 import { useDetectionStore } from '@/stores/detection.store'
+import { useImageSettingsStore } from '@/stores/image-settings.store'
 
 const video = shallowRef<HTMLVideoElement | null>(null)
 const frameSize = reactive({ width: 0, height: 0 })
+const activeDetector = shallowRef<Detector | null>(null)
 
 const camera = useCamera()
 const detector = useDetector()
 const loop = useDetectionLoop(video)
-const { detections, primaryDetection, fps, inferenceMs, runtimeError } = storeToRefs(useDetectionStore())
+const { detections, primaryDetection, fps, inferenceMs, runtimeError, frameCount, lastInput } =
+  storeToRefs(useDetectionStore())
+const { viewMode, filters, enabledFilters } = storeToRefs(useImageSettingsStore())
 
 const error = computed(() => camera.error.value ?? detector.modelError.value ?? runtimeError.value)
 const isActive = computed(() => !!camera.stream.value)
+const showFiltered = computed(() => viewMode.value === 'filtered' && !!activeDetector.value)
+
+const getInputPreview = () => activeDetector.value?.getInputPreview() ?? null
 
 async function startScanning() {
   // Cámara y modelo en paralelo: el usuario ve el video mientras el modelo compila.
   const [instance] = await Promise.all([detector.load().catch(() => null), camera.start()])
+  activeDetector.value = instance
   if (instance && camera.stream.value) loop.start(instance)
 }
 
@@ -50,12 +63,19 @@ function onVideoReady(el: HTMLVideoElement) {
       :inference-ms="inferenceMs"
     />
 
+    <ViewModeToggle v-if="isActive" v-model="viewMode" :filter-count="enabledFilters.length" />
+
     <CameraView
       v-show="isActive"
       :stream="camera.stream.value"
       @ready="onVideoReady"
     >
+      <FilteredPreview v-if="showFiltered" :get-source="getInputPreview" :frame-key="frameCount" />
       <DetectionCanvas :detections="detections" :width="frameSize.width" :height="frameSize.height" />
+      <span v-if="showFiltered && lastInput" class="view-label">
+        Entrada del modelo · {{ lastInput.contentWidth }}×{{ lastInput.contentHeight }}
+        · {{ enabledFilters.length ? enabledFilters.map((f) => f.name).join(' + ') : 'sin filtros' }}
+      </span>
     </CameraView>
 
     <div v-if="!isActive" class="placeholder">
@@ -82,6 +102,9 @@ function onVideoReady(el: HTMLVideoElement) {
         </button>
       </template>
     </div>
+
+    <FilterPanel />
+    <PipelineInfo :input="lastInput" :filters="filters" />
   </section>
 </template>
 
@@ -117,6 +140,19 @@ function onVideoReady(el: HTMLVideoElement) {
 
 .error small {
   opacity: 0.8;
+}
+
+.view-label {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.65);
+  color: #e6edf3;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .actions {

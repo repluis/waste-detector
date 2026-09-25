@@ -2,7 +2,8 @@ import * as ort from 'onnxruntime-web/webgpu'
 import type { ModelConfig } from '@/config/model.config'
 import { ErrorCode, InferenceError, ModelError } from '@/core/errors'
 import { createLogger } from '@/core/logger'
-import type { DetectionResult, Detector, ExecutionBackend } from '@/types/detection'
+import type { DetectionResult, DetectOptions, Detector, ExecutionBackend } from '@/types/detection'
+import type { InputPreview } from '@/types/image'
 import { decodeYoloOutput, detectOutputFormat } from './postprocess'
 import { Preprocessor } from './preprocess'
 
@@ -74,14 +75,20 @@ export class OnnxYoloDetector implements Detector {
     })
   }
 
-  async detect(source: CanvasImageSource, width: number, height: number): Promise<DetectionResult> {
+  async detect(
+    source: CanvasImageSource,
+    width: number,
+    height: number,
+    options: DetectOptions = {},
+  ): Promise<DetectionResult> {
     if (!this.session || !this.preprocessor) {
       throw new ModelError({ code: ErrorCode.MODEL_NOT_LOADED, message: 'detect() llamado sin sesión activa' })
     }
 
     const start = performance.now()
     const size = this.config.inputSize
-    const { data, info } = this.preprocessor.run(source, width, height)
+    const pre = this.preprocessor.run(source, width, height, options.filters)
+    const { data, info } = pre
     const input = new ort.Tensor('float32', data, [1, 3, size, size])
 
     let outputs: ort.InferenceSession.OnnxValueMapType
@@ -112,7 +119,22 @@ export class OnnxYoloDetector implements Detector {
     return {
       detections: boxes.map((b) => ({ ...b, label: this.config.labels[b.classId] ?? `class_${b.classId}` })),
       inferenceMs: performance.now() - start,
+      input: {
+        sourceWidth: width,
+        sourceHeight: height,
+        contentWidth: pre.contentWidth,
+        contentHeight: pre.contentHeight,
+        padX: info.padX,
+        padY: info.padY,
+        tensorSize: size,
+        activeFilters: pre.activeFilters,
+        filtersMs: pre.filtersMs,
+      },
     }
+  }
+
+  getInputPreview(): InputPreview | null {
+    return this.preprocessor?.getPreview() ?? null
   }
 
   async dispose(): Promise<void> {

@@ -1,3 +1,5 @@
+import type { FilterSettings, InputInfo, InputPreview } from './image'
+
 export type WasteCategoryId =
   | 'plastic'
   | 'paper'
@@ -43,6 +45,7 @@ export type ModelStatus = 'idle' | 'loading' | 'ready' | 'error'
 export interface DetectionResult {
   detections: RawDetection[]
   inferenceMs: number
+  input: InputInfo
 }
 
 /**
@@ -51,6 +54,12 @@ export interface DetectionResult {
  */
 export interface Detector {
   load(): Promise<ExecutionBackend>
-  detect(source: CanvasImageSource, width: number, height: number): Promise<DetectionResult>
+  detect(source: CanvasImageSource, width: number, height: number, options?: DetectOptions): Promise<DetectionResult>
+  /** Última imagen de entrada del modelo (tras letterbox y filtros), para la vista "filtrada". */
+  getInputPreview(): InputPreview | null
   dispose(): Promise<void>
+}
+
+export interface DetectOptions {
+  filters?: FilterSettings
 }

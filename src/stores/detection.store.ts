@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
 import type { AppError } from '@/core/errors'
 import type { ExecutionBackend, ModelStatus, WasteDetection } from '@/types/detection'
+import type { InputInfo } from '@/types/image'
 
 export const useDetectionStore = defineStore('detection', () => {
   const modelStatus = ref<ModelStatus>('idle')
@@ -13,6 +14,10 @@ export const useDetectionStore = defineStore('detection', () => {
   const detections = shallowRef<WasteDetection[]>([])
   const inferenceMs = ref(0)
   const fps = ref(0)
+  /** Se incrementa en cada frame procesado (dispara el redibujado de la vista filtrada). */
+  const frameCount = ref(0)
+  /** Qué se le hizo al último frame antes de entrar al modelo. */
+  const lastInput = shallowRef<InputInfo | null>(null)
 
   /** Residuo con mayor confianza en el frame actual. */
   const primaryDetection = computed(() =>
@@ -21,9 +26,11 @@ export const useDetectionStore = defineStore('detection', () => {
 
   let lastFrameAt = 0
 
-  function pushFrame(frame: WasteDetection[], ms: number) {
+  function pushFrame(frame: WasteDetection[], ms: number, input: InputInfo) {
     detections.value = frame
     inferenceMs.value = ms
+    lastInput.value = input
+    frameCount.value++
     const now = performance.now()
     if (lastFrameAt) {
       const instant = 1000 / (now - lastFrameAt)
@@ -46,6 +53,8 @@ export const useDetectionStore = defineStore('detection', () => {
     detections,
     inferenceMs,
     fps,
+    frameCount,
+    lastInput,
     primaryDetection,
     pushFrame,
     resetFrame,

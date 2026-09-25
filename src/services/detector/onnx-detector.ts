@@ -18,6 +18,8 @@ export class OnnxYoloDetector implements Detector {
   }
 
   async load(): Promise<ExecutionBackend> {
+    ort.env.wasm.wasmPaths = this.config.wasmPath
+    ort.env.logLevel = 'error' // oculta avisos informativos de asignación de nodos
     // Multi-hilo solo si la página está aislada (headers COOP/COEP en vite.config.ts).
     ort.env.wasm.numThreads = self.crossOriginIsolated
       ? Math.min(4, navigator.hardwareConcurrency || 1)

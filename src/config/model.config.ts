@@ -2,6 +2,8 @@ import { COCO_LABELS } from './labels/coco'
 
 export interface ModelConfig {
   url: string
+  /** Carpeta con el runtime WASM de onnxruntime-web (copiado por scripts/copy-ort-assets.mjs). */
+  wasmPath: string
   /** Lado del tensor cuadrado de entrada (imgsz con el que se exportó el modelo). */
   inputSize: number
   /** Nombres de clase en el orden de los índices del modelo. */
@@ -19,6 +21,7 @@ export interface ModelConfig {
  */
 export const MODEL_CONFIG: ModelConfig = {
   url: import.meta.env.VITE_MODEL_URL ?? `${import.meta.env.BASE_URL}models/waste-detector.onnx`,
+  wasmPath: `${import.meta.env.BASE_URL}ort/`,
   inputSize: 640,
   labels: COCO_LABELS,
   scoreThreshold: Number(import.meta.env.VITE_SCORE_THRESHOLD ?? 0.4),

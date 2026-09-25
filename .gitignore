@@ -14,6 +14,9 @@ dist-ssr
 .env
 .vercel
 
+# Generado por scripts/copy-ort-assets.mjs (predev / prebuild)
+public/ort
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

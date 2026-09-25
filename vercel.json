@@ -5,7 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/((?!assets/|models/|favicon\\.svg).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|models/|ort/|favicon\\.svg).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -23,7 +23,7 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
-      "source": "/models/(.*)",
+      "source": "/(models|ort)/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }]
     }
   ]

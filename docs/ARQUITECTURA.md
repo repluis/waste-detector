@@ -110,6 +110,7 @@ waste-vision/
   - `[1, 4+nc, N]`: raw (YOLOv8, YOLO11), NMS en JS.
 - **COOP/COEP** en `vite.config.ts`: habilitan `SharedArrayBuffer` → WASM multi-hilo. En producción el hosting **debe** enviar esos mismos headers.
 - **Lazy loading**: onnxruntime-web (~27 MB de WASM) solo se descarga al entrar en `/scanner`.
+- **Runtime WASM fuera del bundle (`/ort/`)**: `scripts/copy-ort-assets.mjs` (se ejecuta en `predev`/`prebuild`) copia el runtime de onnxruntime a `public/ort/`, y Vite usa la build `onnxruntime-web-use-extern-wasm`. Motivo: los hilos WASM son Web Workers que cargan ese `.mjs`. Si estuviera empaquetado en un chunk de la app, cada worker ejecutaría también Vue y el CSS, y fallaría con `document is not defined` (pasaba en Vercel, donde COOP/COEP activan el multi-hilo). `public/ort/` es generado: no se versiona.
 
 ## Estado actual (v0.1)
 

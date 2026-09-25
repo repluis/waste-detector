@@ -7,7 +7,10 @@
     "node": ">=22"
   },
   "scripts": {
+    "copy:ort": "node scripts/copy-ort-assets.mjs",
+    "predev": "npm run copy:ort",
     "dev": "vite",
+    "prebuild": "npm run copy:ort",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc -b",

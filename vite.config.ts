@@ -1,6 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
-import { defineConfig } from 'vite'
+import { defaultClientConditions, defineConfig } from 'vite'
 
 // Cross-origin isolation habilita SharedArrayBuffer → WASM multi-hilo en onnxruntime-web.
 const isolationHeaders = {
@@ -15,6 +15,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+    // Build de onnxruntime-web SIN el runtime WASM embebido: se carga desde /ort/
+    // (ver scripts/copy-ort-assets.mjs). Evita que los workers WASM ejecuten el bundle de la app.
+    conditions: ['onnxruntime-web-use-extern-wasm', ...defaultClientConditions],
   },
   optimizeDeps: {
     // onnxruntime-web carga sus .wasm dinámicamente; el pre-bundling de Vite rompe esas rutas.

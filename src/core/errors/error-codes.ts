@@ -65,7 +65,7 @@ export const DEVELOPER_HINTS: Record<ErrorCode, string> = {
   MODEL_FETCH_FAILED:
     'Comprueba que el archivo exista en public/models/ y que VITE_MODEL_URL sea correcta. Abre la URL del contexto en otra pestaña.',
   MODEL_INVALID:
-    'Lo descargado no es un .onnx. Si es HTML, el rewrite SPA de vercel.json está capturando la ruta; si pesa ~130 bytes, es un puntero de Git LFS: sube el binario real.',
+    'Lo descargado no es un .onnx. Si es HTML, el archivo no existe en esa URL y el rewrite SPA devolvió index.html: revisa VITE_MODEL_URL en Vercel (Settings → Environment Variables; bórrala para usar /models/waste-detector.onnx) y redespliega. Si pesa ~130 bytes, es un puntero de Git LFS: sube el binario real.',
   MODEL_NO_BACKEND:
     'Ningún backend pudo crear la sesión (ver "attempts" en el contexto). Si falla WASM, verifica que /ort/*.mjs y /ort/*.wasm se sirvan (npm run copy:ort) y no devuelvan index.html.',
   MODEL_LOAD_FAILED: 'Error inesperado al inicializar el detector. Revisa "Causa original".',

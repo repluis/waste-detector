@@ -136,7 +136,7 @@ export class OnnxYoloDetector implements Detector {
     if (!res.ok) {
       throw new ModelError({
         code: ErrorCode.MODEL_FETCH_FAILED,
-        message: `HTTP ${res.status} ${res.statusText} al descargar el modelo`,
+        message: `HTTP ${res.status} ${res.statusText} al descargar ${url}`,
         context: { url, status: res.status },
       })
     }
@@ -148,7 +148,7 @@ export class OnnxYoloDetector implements Detector {
       const preview = new TextDecoder().decode(bytes.slice(0, 120))
       throw new ModelError({
         code: ErrorCode.MODEL_INVALID,
-        message: `El archivo descargado no es un modelo ONNX (${bytes.byteLength} bytes, ${contentType || 'sin content-type'})`,
+        message: `${url} no es un modelo ONNX (${bytes.byteLength} bytes, ${contentType || 'sin content-type'})`,
         context: { url, contentType, bytes: bytes.byteLength, inicio: preview },
       })
     }
